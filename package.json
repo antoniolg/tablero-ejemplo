@@ -1,0 +1,18 @@
+{
+  "name": "tablero",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Panel del día para una tablet vieja: tareas en Markdown con una CLI para agentes, calendario, comidas y comandos de voz. Ejemplo, sin mantenimiento.",
+  "type": "module",
+  "bin": {
+    "tareas": "bin/tareas.mjs",
+    "tablero": "bin/tablero.mjs"
+  },
+  "scripts": {
+    "start": "node bin/tablero.mjs",
+    "test": "node --test 'test/*.test.mjs'"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,355 @@
+/* Calendar and meals panels. Sizes favour fingers: a wall tablet is the main target. */
+
+:root {
+  --hour: 52px; /* keep in sync with HOUR in calendar.js */
+  --gutter: 52px;
+  --now: #d93025;
+}
+
+/* The calendar and the home panel fill the visible screen and scroll inside, never the page: they
+   always fit, whether Firefox's toolbar is showing or not. */
+body[data-panel="calendario"], body[data-panel="inicio"] { height: 100vh; height: 100dvh; overflow: hidden; }
+body[data-panel="calendario"] .main, body[data-panel="inicio"] .main { min-height: 0; }
+
+.calendar {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  overflow: hidden;
+  touch-action: pan-y;
+}
+/* ⋮ in the corner of the day header: week navigation, refresh and calendars. */
+.cal-menu {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+}
+.cal-menu svg { width: 20px; height: 20px; fill: currentColor; }
+.cal-menu.away { background: var(--accent-soft); color: var(--accent); }
+.popover {
+  position: fixed;
+  z-index: 30;
+  display: grid;
+  min-width: 210px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
+}
+.popover-title { margin: 4px 10px 6px; color: var(--muted); font-size: 12.5px; }
+.popover button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font-size: 15px;
+  text-align: left;
+}
+.popover button:hover, .popover button:focus-visible { background: var(--surface-2); }
+.popover hr { width: 100%; margin: 4px 0; border: 0; border-top: 1px solid var(--line); }
+.grid-head, .grid-allday, .grid-inner { display: grid; }
+.grid-head { border-bottom: 1px solid var(--line); }
+.day-head { display: flex; align-items: baseline; justify-content: center; gap: 6px; padding: 8px 4px; color: var(--muted); }
+.day-head span { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+.day-head strong { font-size: 20px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.day-head.past strong { color: var(--muted); }
+.day-head.today strong {
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--surface);
+}
+
+.grid-allday { border-bottom: 1px solid var(--line); max-height: 30vh; overflow-y: auto; }
+.gutter-label { padding: 8px 6px; color: var(--muted); font-size: 11px; text-align: right; }
+.gutter-label.month { color: var(--text); font-weight: 600; }
+.allday-cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 4px 3px; border-left: 1px solid var(--line); }
+.allday-cell.today, .day-col.today { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.chip-event, .chip-task {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 6px;
+  font-size: 12.5px;
+  text-align: left;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.chip-event { background: color-mix(in srgb, var(--c) 30%, var(--surface)); }
+.chip-event.free { background: color-mix(in srgb, var(--c) 14%, var(--surface)); color: var(--muted); }
+.chip-task { border: 1px dashed var(--muted); background: var(--surface); }
+.chip-task .dot { flex: none; width: 12px; height: 12px; border: 1.5px solid var(--muted); border-radius: 50%; }
+
+.grid-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.grid-inner { position: relative; }
+.hours span {
+  display: block;
+  height: var(--hour);
+  padding-right: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: right;
+  position: relative;
+  top: -7px;
+  font-variant-numeric: tabular-nums;
+}
+.hours span:first-child { visibility: hidden; }
+.day-col {
+  position: relative;
+  min-width: 0;
+  border-left: 1px solid var(--line);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px);
+  background-size: 100% var(--hour);
+}
+
+.event {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-height: 0; /* the touch rule gives buttons 44px; an event is exactly as tall as its time */
+  padding: 3px 6px;
+  border: 1px solid color-mix(in srgb, var(--c) 72%, var(--text));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--c) 26%, var(--surface));
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.25;
+  text-align: left;
+  overflow: hidden;
+}
+@media (hover: hover) {
+  .event:hover { border-color: var(--text); }
+}
+.event strong { font-weight: 600; overflow-wrap: anywhere; }
+.event span { color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.event.compact { flex-direction: row; gap: 5px; align-items: center; padding-block: 1px; }
+.event.compact span { display: none; } /* short events: the title alone; the grid already says the time */
+.event.compact strong, .event.compact span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event.free {
+  background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--c) 16%, var(--surface)) 0 6px, var(--surface) 6px 12px);
+}
+/* Work blocks: time reserved for a task. A dashed outline and a lighter fill tell them from meetings. */
+.event.block {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--c) 14%, var(--surface));
+}
+.event.block.done strong { text-decoration: line-through; color: var(--muted); }
+.event.block.done { background: color-mix(in srgb, var(--c) 7%, var(--surface)); }
+/* Finished events fade by colour, not opacity: the tablet's GPU renderer breaks semi-transparent groups. */
+.event.past {
+  border-color: color-mix(in srgb, var(--c) 45%, var(--surface));
+  background: color-mix(in srgb, var(--c) 15%, var(--surface));
+  color: color-mix(in srgb, var(--text) 62%, var(--surface));
+}
+.event.past span { color: color-mix(in srgb, var(--muted) 70%, var(--surface)); }
+.event.block.past { background: color-mix(in srgb, var(--c) 8%, var(--surface)); }
+.event.free.past {
+  background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--c) 9%, var(--surface)) 0 6px, var(--surface) 6px 12px);
+}
+.day-col { cursor: copy; }
+.day-col .event { cursor: pointer; }
+/* Background calendars: a tinted band behind the events, taking no lane. */
+.band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  background: color-mix(in srgb, var(--c) 13%, transparent);
+  pointer-events: none;
+}
+.band span {
+  position: absolute;
+  right: 4px;
+  top: 2px;
+  max-width: calc(100% - 8px);
+  overflow: hidden;
+  color: color-mix(in srgb, var(--c) 47%, var(--text) 38%); /* 85 % in all: a little transparent */
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.event { z-index: 1; }
+.day-col .now { position: absolute; left: 0; right: 0; height: 2px; background: var(--now); pointer-events: none; z-index: 2; }
+.day-col .now::before { content: ""; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--now); }
+
+.event-title { display: flex; align-items: center; gap: 10px; }
+.event-title::before { content: ""; flex: none; width: 12px; height: 12px; border-radius: 3px; background: var(--c); }
+
+.day-pills { display: none; }
+
+.toggles { display: grid; gap: 2px; }
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: var(--text);
+  font-size: 14px;
+}
+.toggle .name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.segmented { display: flex; flex: none; padding: 2px; border-radius: 999px; background: var(--surface-2); }
+.segmented button { min-height: 34px; padding: 4px 12px; border: 0; background: none; color: var(--muted); font-size: 12.5px; }
+.segmented button[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / 0.15); }
+.toggle.unused { color: var(--muted); }
+.swatch { width: 14px; height: 14px; border-radius: 4px; background: var(--c); }
+
+/* ---------- block sheets ---------- */
+
+.when { display: grid; gap: 10px; }
+.choose { display: grid; gap: 8px; }
+.task-list { display: flex; flex-direction: column; gap: 6px; max-height: 40vh; overflow-y: auto; }
+.task-pick, .block-row {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  text-align: left;
+}
+.task-pick.new { border: 1.5px dashed var(--accent); color: var(--accent); }
+.task-pick span { color: var(--muted); font-size: 12.5px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 100%; }
+.blocks { display: grid; gap: 6px; padding-top: 4px; border-top: 1px solid var(--line); }
+.blocks h3 { margin: 0; }
+.block-list { display: grid; gap: 6px; }
+/* The task behind a block, from its sheet: done (green, so it does not compete with Guardar) or open it. */
+.block-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+button.block-done { border-color: #2fa36b; background: color-mix(in srgb, #2fa36b 12%, var(--surface)); color: #1d6b47; font-weight: 600; }
+.block-row { min-height: 40px; }
+
+/* ---------- meals ---------- */
+
+.meals {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px 20px 24px;
+  touch-action: pan-y;
+}
+.meal-day {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+.meal-day header { display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px; }
+.meal-day header span { font-weight: 600; }
+.meal-day header strong { color: var(--muted); font-size: 20px; font-variant-numeric: tabular-nums; }
+.meal-day.today { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft); }
+.meal-day.today header strong { color: var(--accent); }
+/* Days gone by step back by colour (no opacity on the tablet). */
+.meal-day.past { background: color-mix(in srgb, var(--surface-2) 45%, var(--bg)); }
+.meal-day.past header span, .meal-day.past header strong, .meal-day.past .dish { color: var(--muted); }
+.meal-day.past .meal-slot { background: color-mix(in srgb, var(--surface) 50%, var(--bg)); border-color: color-mix(in srgb, var(--line) 60%, var(--bg)); }
+.meal-day.past .meal-slot.empty { background: transparent; }
+.meal-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 96px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-align: left;
+}
+.slot-label { color: var(--muted); font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.dish { font-size: 15.5px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.meal-slot.empty { border-style: dashed; background: transparent; }
+.meal-slot.empty .dish { color: var(--muted); font-weight: 400; }
+.meal-slot:not(.empty) { cursor: grab; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.meal-slot.drag-source { border-style: dashed; background: transparent; }
+.meal-slot.drag-source .dish { color: var(--muted); }
+.meal-slot.drop-target { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--accent-soft); }
+.drag-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 50;
+  margin: 0;
+  pointer-events: none;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.28);
+}
+.pills.big { gap: 8px; }
+.pills.big button { min-height: 44px; padding: 8px 16px; font-size: 14.5px; }
+
+@media (max-width: 760px) {
+  .grid-head { display: none; }
+  .day-pills { display: flex; gap: 6px; padding: 10px 12px 0; overflow-x: auto; scrollbar-width: none; }
+  .day-pills button {
+    flex: 1 0 44px;
+    display: grid;
+    justify-items: center;
+    gap: 0;
+    padding: 6px 0;
+    border-radius: 12px;
+  }
+  .day-pills button span { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+  .day-pills button strong { font-size: 16px; }
+  .day-pills button.today strong { color: var(--accent); }
+  .day-pills .cal-menu { flex: 0 0 44px; margin: 0; }
+  .meals { grid-template-columns: 1fr; padding: 10px 16px 24px; }
+  .meal-day { flex-direction: row; flex-wrap: wrap; }
+  .meal-day header { flex-basis: 100%; }
+  .meal-slot { min-height: 72px; }
+}
+
+/* Touch screens: bigger targets everywhere, no hover-only affordances. */
+@media (pointer: coarse) {
+  /* :where keeps this at zero specificity, so components with their own padding (rail, pills,
+     meal slots…) keep it and only plain buttons grow. */
+  :where(button:not(.check)) { min-height: 44px; padding-inline: 16px; }
+  button.nav { width: 48px; }
+  button.icon { min-width: 44px; }
+  .card { padding: 12px 13px 11px; }
+  input, textarea, select { min-height: 44px; font-size: 16px; }
+  .chip-event, .chip-task { min-height: 36px; }
+}
+
+/* Short screens (the tablet is 960×600 CSS px): a denser calendar with smaller text, so a week
+   fits without feeling crammed. Placed last so it wins over the touch sizes above. */
+@media (max-height: 760px) {
+  :root { --gutter: 42px; --hour: 56px; }
+  .day-head { gap: 4px; padding: 5px 2px; }
+  .day-head span { font-size: 10.5px; }
+  .day-head strong { font-size: 16px; }
+  .day-head.today strong { min-width: 26px; height: 26px; }
+  .gutter-label { padding: 6px 4px; font-size: 10px; }
+  .grid-allday { max-height: 78px; } /* about two and a half chips; more scroll inside */
+  .allday-cell { gap: 2px; padding: 3px 2px; }
+  .chip-event, .chip-task { gap: 4px; min-height: 26px; padding: 2px 6px; font-size: 11px; }
+  .chip-task .dot { width: 9px; height: 9px; }
+  .hours span { padding-right: 5px; font-size: 10px; }
+  .event { padding: 2px 5px; font-size: 11px; line-height: 1.2; }
+  .event span { font-size: 10px; }
+  .band span { font-size: 9.5px; }
+}
+
+:root[data-theme="dark"] button.block-done { color: #63d29b; }

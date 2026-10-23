@@ -1,0 +1,395 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f5f3;
+  --surface: #ffffff;
+  --surface-2: #ebebe8;
+  --text: #1c1c1a;
+  --muted: #696964;
+  --line: #deded9;
+  --accent: #3451d1;
+  --accent-soft: #e6ebfc;
+  --warn: #8f5300;
+  --warn-soft: #fbeedb;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Inter, system-ui, sans-serif;
+}
+
+/* Dark: set on <html> by theme.js, from this device's choice or the system's. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #141414;
+  --surface: #1e1e1e;
+  --surface-2: #191919;
+  --text: #ececea;
+  --muted: #9a9a95;
+  --line: #2f2f2f;
+  --accent: #93a6ff;
+  --accent-soft: #232a46;
+  --warn: #f2b45e;
+  --warn-soft: #3a2c15;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  /* The visible height: in Firefox on Android, vh stays the full screen even while its toolbar shows. */
+  min-height: 100dvh;
+  display: flex;
+  /* No double-tap zoom: taps respond at once on the tablet. */
+  touch-action: manipulation;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 13px;
+  cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button.primary { background: var(--text); border-color: var(--text); color: var(--bg); }
+button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+button.icon { border: 0; background: none; font-size: 22px; line-height: 1; padding: 2px 8px; color: var(--muted); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.rail {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 56px;
+  height: 100vh;
+  height: 100dvh;
+  padding: max(8px, env(safe-area-inset-top)) 4px max(10px, env(safe-area-inset-bottom));
+  padding-left: max(4px, env(safe-area-inset-left));
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+/* Icon-only, 48px: the size a finger needs and nothing more. The name is the button's label. */
+.rail button {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: none;
+  color: var(--muted);
+}
+.rail button span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.rail svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.rail button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); }
+/* The tabs on top; the light/dark switch and the clock at the bottom. */
+.rail-tabs { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rail .voice { margin-top: auto; }
+/* Recording: red, so it is clear the tablet is listening (no animation: see AGENTS.md). */
+.rail .voice[aria-pressed="true"] { background: #fde3e1; color: #c5221f; }
+:root[data-theme="dark"] .rail .voice[aria-pressed="true"] { background: #4a1d1b; color: #ff8a80; }
+.rail .theme[aria-pressed], .rail .voice[aria-pressed="false"] { background: none; border: 0; color: var(--muted); }
+.theme-sun { display: none; }
+:root[data-theme="dark"] .theme-moon { display: none; }
+:root[data-theme="dark"] .theme-sun { display: block; }
+.clock { display: grid; justify-items: center; gap: 1px; margin: 4px 0 0; color: var(--muted); font-size: 10.5px; text-align: center; }
+.clock strong { color: var(--text); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.panel[hidden] { display: none; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 20px 0; }
+.stats { flex: 1; margin: 0; color: var(--muted); }
+.actions { display: flex; gap: 8px; margin-left: auto; }
+.nav-week { display: flex; gap: 6px; }
+button.nav { width: 40px; padding: 6px 0; font-size: 18px; line-height: 1; }
+.range { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.loading { margin: 0; padding: 24px; color: var(--muted); }
+.spacer { flex: 1; }
+button.danger { color: #c0392b; }
+a.button {
+  display: inline-block;
+  padding: 6px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.jump { display: none; }
+
+/* New task: a floating button instead of a toolbar, so the board gets the whole height. */
+.fab {
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  min-height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.24);
+}
+@media (hover: hover) {
+  .fab:hover { border: 0; background: color-mix(in srgb, var(--text) 82%, var(--bg)); }
+}
+.fab svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+
+.board {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 20px 96px; /* room for the floating button */
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+
+.column {
+  flex: 1 0 232px;
+  max-width: 340px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  scroll-snap-align: start;
+  scroll-margin-left: 16px;
+}
+.column.drop { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.column > header { display: flex; align-items: baseline; justify-content: space-between; padding: 2px 4px 2px; }
+.column h2 { margin: 0; font-size: 13px; font-weight: 600; }
+.count { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.hint { margin: 0; padding: 6px 4px; color: var(--muted); font-size: 12.5px; }
+
+.card {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  padding: 10px 11px 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: grab;
+}
+.card:hover { border-color: var(--muted); }
+/* Card states by form and colour, never opacity (the tablet's GPU breaks semi-transparent groups). */
+.card.dragging { border-style: dashed; background: var(--surface-2); }
+.card.closing { background: var(--surface-2); }
+.card.closing h3 { color: var(--muted); text-decoration: line-through; }
+.card .title { display: flex; align-items: flex-start; gap: 8px; padding-right: 38px; }
+.card h3 { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.3; }
+
+.check {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 0.5px;
+  padding: 0;
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+  background: transparent;
+}
+/* A larger invisible hit area, mostly for touch. */
+.check::before { content: ""; position: absolute; inset: -9px; }
+.check::after {
+  content: "";
+  position: absolute;
+  left: 4.5px;
+  top: 1.5px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--muted);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+  visibility: hidden;
+}
+.check:hover { border-color: var(--text); }
+.check:hover::after, .check:focus-visible::after { visibility: visible; border-color: color-mix(in srgb, var(--muted) 70%, var(--surface)); }
+.card.closing .check { background: var(--text); border-color: var(--text); }
+.card.closing .check::after { visibility: visible; border-color: var(--bg); }
+.card .next {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card .id { position: absolute; top: 10px; right: 11px; }
+.card.closed h3 { color: var(--muted); font-weight: 500; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 1px; }
+.chip {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.chip.block { background: color-mix(in srgb, #4fb38a 18%, var(--surface)); color: var(--text); }
+.card.parked { border-style: dashed; background: transparent; }
+.card.parked h3 { color: var(--muted); }
+.chip.flag-limite { background: var(--warn-soft); color: var(--warn); }
+.chip.flag-vuelve, .chip.flag-revisar, .chip.flag-estado { background: var(--accent-soft); color: var(--accent); }
+.id { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+dialog {
+  width: min(660px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+}
+dialog.small { width: min(440px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgb(0 0 0 / 0.38); }
+.form { display: grid; gap: 12px; padding: 16px 20px 20px; }
+.form h2 { margin: 0; font-size: 16px; }
+.form h3 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+label, legend { display: grid; gap: 4px; color: var(--muted); font-size: 12px; }
+input, textarea, select {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+textarea { resize: vertical; }
+.title-input { padding: 6px 8px; border-color: transparent; background: none; font-size: 18px; font-weight: 600; }
+.title-input:hover, .title-input:focus { border-color: var(--line); }
+.choice { display: flex; gap: 14px; margin: 0; padding: 0; border: 0; }
+.choice legend { margin-bottom: 6px; }
+.choice label { display: flex; align-items: center; gap: 6px; color: var(--text); font-size: 14px; }
+.choice input { width: auto; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.row { display: flex; align-items: center; gap: 8px; }
+.row.end { justify-content: flex-end; }
+.row.between { justify-content: space-between; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pills button { padding: 4px 11px; font-size: 13px; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 13px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
+.body { padding-top: 4px; border-top: 1px solid var(--line); font-size: 13.5px; overflow-wrap: anywhere; }
+.body h3, .body h4 { margin: 12px 0 4px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.body p { margin: 4px 0; }
+.body ul { margin: 4px 0; padding-left: 18px; }
+.body li { margin: 3px 0; }
+.body code { padding: 0 4px; border-radius: 4px; background: var(--surface-2); font-size: 12.5px; }
+a { color: var(--accent); }
+
+/* Voice command sheet: what was heard, then the plan. */
+.voice-heard { margin: 0; font-size: 15px; font-style: italic; }
+.voice-plan { display: grid; gap: 6px; margin: 0; padding-left: 20px; font-size: 15px; }
+
+.status {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+  margin: 0 auto;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 13px;
+  visibility: hidden; /* shown and hidden without a fade: no opacity on the tablet */
+  pointer-events: none;
+}
+.status.show { visibility: visible; }
+.status.show.actionable { display: flex; align-items: center; gap: 12px; pointer-events: auto; }
+.status button { padding: 2px 10px; border: 0; background: var(--bg); color: var(--text); font-size: 12.5px; }
+
+@media (max-width: 700px) {
+  body { flex-direction: column; }
+  .rail {
+    position: fixed;
+    inset: auto 0 0 0;
+    order: 2;
+    flex-direction: row;
+    width: auto;
+    height: auto;
+    padding: 6px 12px max(6px, env(safe-area-inset-bottom));
+    border-right: 0;
+    border-top: 1px solid var(--line);
+  }
+  .rail button { flex: 1; width: auto; height: auto; gap: 2px; padding: 6px 2px; font-size: 11px; font-weight: 600; }
+  /* At the bottom of a phone there is room for the names again. */
+  .rail button span { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+  .rail-tabs { flex: 1; flex-direction: row; }
+  .rail .theme, .rail .voice { flex: 0 0 48px; margin: 0; }
+  .clock { display: none; }
+  .main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  .status { bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .fab { bottom: calc(84px + env(safe-area-inset-bottom)); right: 16px; }
+  .toolbar { padding: 10px 16px 0; }
+  .stats { order: 3; flex-basis: 100%; }
+  .jump {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 16px;
+    overflow-x: auto;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    scrollbar-width: none;
+  }
+  .jump a {
+    display: flex;
+    gap: 5px;
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 12.5px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .jump a span { color: var(--muted); }
+  .board { padding: 12px 16px 96px; scroll-snap-type: x mandatory; }
+  .column { flex: 0 0 calc(100vw - 48px); max-width: none; }
+  dialog, dialog.small {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 92vh;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    border-radius: 14px 14px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
